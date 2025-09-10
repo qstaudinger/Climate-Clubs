@@ -1,134 +1,200 @@
-# Climate Clubs in Retrospect and Prospect: Evidence from Updated Data
+# Nordhaus Climate Clubs – Replication
 
-This project replicates the results from
-Nordhaus (2015): "Climate Clubs: Overcoming Free-riding in International Climate Policy"
-and extends them with an updated dataset for the year 2023.
+Replication of  
+**Nordhaus (2015), “Climate Clubs: Overcoming Free-riding in International Climate Policy”**  
+with an additional update using 2023 data.
 
-There are two main scripts:
+Main scripts:
+- `01_Preprocessing.R` – data preparation
+- `02_Replication.R` – replication and scenario runs
 
-01_Preprocessing.R – data preparation
+---
 
-02_Replication.R – replication and scenario runs
+## Requirements
 
-1. 01_Preprocessing.R
-Purpose
+- R ≥ 4.2
+- R packages:
+  - `dplyr`, `tidyr`, `stringr`, `purrr`
+  - `readr`, `readxl`, `writexl`
+  - `ggplot2`
 
-This script prepares trade, emissions, population, and GDP data and aggregates them into 15 world regions. The output is a consolidated dataset used for modeling.
+Install in R:
 
-Steps
+```r
+install.packages(c(
+  "dplyr","tidyr","stringr","purrr",
+  "readr","readxl","writexl","ggplot2"
+))
+Data inputs
 
-a) Trade data
+Place the following files under Data/Rawdata/:
 
-Import from TradeData.xlsx.
+TradeData.xlsx
 
-Remove aggregate or invalid codes.
+GHG.csv (EDGAR)
 
-Map countries to 15 regions (e.g. EU, China, LatAm, SSA).
+Population.xls (World Bank)
 
-Construct a bilateral export matrix between regions (in million USD).
+GDP.xls (World Bank)
 
-b) GHG emissions
+Also place the original Nordhaus dataset as
+Data/Input_Original.xlsx.
 
-Import from GHG.csv (EDGAR).
+Running the preprocessing script will generate
+Data/Input_Updated.xlsx (2023 update).
 
-Aggregate to the 15 regions.
+How to run
 
-c) Population data
+From project root:
 
-Import from Population.xls (World Bank).
+# 1) Build updated input (creates Data/Input_Updated.xlsx)
+source("01_Preprocessing.R")
 
-Convert to millions of people, aggregate by region.
+# 2) Run replication and scenarios (writes Results/* and Graphs/*)
+source("02_Replication.R")
 
-d) GDP data
 
-Import from GDP.xls (World Bank).
+Or via command line:
 
-Convert to billions of USD, aggregate by region.
+Rscript 01_Preprocessing.R
+Rscript 02_Replication.R
 
-e) Merge
+What the scripts do
+01_Preprocessing.R
 
-Combine trade, population, GDP, and emissions for each region.
+Cleans trade data and constructs a 15-region export matrix (million USD).
 
-Add McKinsey/Nordhaus alpha values.
+Aggregates GHG, population (millions), and GDP (billion USD).
 
-Export the final dataset: Data/Input_Updated.xlsx.
+Maps countries into 15 regions:
 
-2. 02_Replication.R
-Purpose
+Brazil, Japan, EU, SSA, Canada, US,
+LatAm, ROW, SEAsia, Mideast, Russia,
+India, Safrica, China, Eurasia
 
-This script runs the actual replication exercise. It compares the original Nordhaus dataset with the updated 2023 dataset from step 1.
 
-Steps
+Adds McKinsey/Nordhaus alpha values.
 
-a) Data preparation
+Writes final dataset Data/Input_Updated.xlsx.
 
-Load Input_Original.xlsx and Input_Updated.xlsx.
+02_Replication.R
 
-Compute unscaled SCC weights, initialize random start values for membership and welfare.
+Loads Input_Original.xlsx and Input_Updated.xlsx.
 
-Add alpha and beta parameters from Nordhaus.
+Adds alpha/beta parameters and computes optimal tariffs.
 
-Compute optimal tariffs for each region.
+Runs run_scenario() across:
 
-b) Scenario function (run_scenario)
+Tariff rates: 0 … 0.1 (step 0.01)
 
-Models the dynamics of climate club formation over multiple iterations.
+SCC: 12.5, 25, 50, 100 USD/tCO₂
 
-Key steps:
+20 iterations per combination.
 
-Test membership decisions.
+Outputs:
 
-Compute tariff rates, terms of trade, welfare and efficiency gains.
+Participation by region
 
-Account for trade, mitigation, damages, and abatement costs.
+Global average carbon price
 
-Compare new vs. baseline allocation (Pareto test).
+Net economic gains
 
-Output: final membership status, welfare, global CO₂ price, total gains.
+Outputs
 
-c) Scenario runs
-
-Parameters:
-
-Tariff rates from 0 to 0.1 (step size 0.01).
-
-SCC = 12.5, 25, 50, 100 USD/tCO₂.
-
-Simulations run for both datasets (Original and Updated, 20 iterations each).
-
-Results exported as Excel files:
+Excel tables
 
 Results/results_original.xlsx
 
 Results/results_updated.xlsx
 
-d) Graphs
+Figures
 
-Number of participating regions by SCC and tariff rate.
+Graphs/number_regions_original.png
 
-Global average carbon price.
+Graphs/carbon_price_original.png
 
-Net economic gains.
+Graphs/net_gain_original.png
 
-Figures exported to Graphs/.
+Graphs/number_regions_updated.png
 
-3. Directory structure
+Graphs/carbon_price_updated.png
+
+Graphs/net_gain_updated.png
+
+Directory layout
 Data/
-  Rawdata/               # Raw data (TradeData.xlsx, GHG.csv, Population.xls, GDP.xls)
-  Input_Original.xlsx    # Original Nordhaus dataset
-  Input_Updated.xlsx     # Updated dataset (2023)
+  Rawdata/
+    TradeData.xlsx
+    GHG.csv
+    Population.xls
+    GDP.xls
+  Input_Original.xlsx
+  Input_Updated.xlsx
 Results/
-  results_original.xlsx  # Simulation results with original data
-  results_updated.xlsx   # Simulation results with updated data
+  results_original.xlsx
+  results_updated.xlsx
 Graphs/
-  *.png                  # Figures from the simulations
+  *.png
+01_Preprocessing.R
+02_Replication.R
 
-4. Notes
 
-Both scripts require dplyr, tidyr, readxl, writexl, ggplot2 and related packages.
+Add to .gitignore if you don’t want to track outputs:
 
-Input files must be placed in the Data/ directory.
+Data/Input_Updated.xlsx
+Results/
+Graphs/
+.DS_Store
 
-The preprocessing script must be run before the replication script to generate Input_Updated.xlsx.
+Reproducibility
 
-Results depend on the random initialization of membership status (reproducibility only with a fixed random seed).
+Results depend on random initialization of membership.
+Add a seed at the top of 02_Replication.R:
+
+set.seed(2025)
+
+Known issues & fixes
+
+Parameter call in scenarios
+Replace countries = Input$Country with the matching dataset:
+
+# For original data
+results_original <- purrr::pmap_dfr(
+  parameter,
+  ~ run_scenario(tariff = ..1, SCC = ..2,
+                 Input = Input_Original,
+                 countries = Input_Original$Country,
+                 n_iter = 20)
+)
+
+# For updated data
+results_updated <- purrr::pmap_dfr(
+  parameter,
+  ~ run_scenario(tariff = ..1, SCC = ..2,
+                 Input = Input_Updated,
+                 countries = Input_Updated$Country,
+                 n_iter = 20)
+)
+
+
+Plot object names
+Use valid R names (no .png in object names):
+
+net_gain_original <- ggplot(...) + ...
+ggsave("Graphs/net_gain_original.png", plot = net_gain_original, width = 8, height = 5, dpi = 300)
+
+
+Same for updated plots.
+
+Undefined plots when saving
+Ensure you save the correct object:
+
+ggsave("Graphs/number_regions_updated.png",
+       plot = number_regions_updated, width = 8, height = 5, dpi = 300)
+
+Citation
+
+Nordhaus, W. D. (2015).
+Climate Clubs: Overcoming Free-riding in International Climate Policy.
+American Economic Review, 105(4), 1339–1370.
+https://doi.org/10.1257/aer.15000001
