@@ -99,6 +99,26 @@ iso_to_region <- function(iso3) {
 
 ## Process Data
 drop_iso <- c("W00","ALL","XXA","XXB","XXC","Z99")
+
+drop_iso <- c(
+  "W00","ALL","XXA","XXB","XXC","Z99","WLD",
+  
+  "AFE","AFW","ARB","ASM","CEB","CHI","CSS","CUW","CYM",
+  "EAP","EAR","EAS","ECA","ECS","EMU","EUU","FCS","FRO","FSM",
+  "GIB","GRL","GUM","HIC","HKG","HPC",
+  "IBD","IBT","IDA","IDB","IDX","IMN","INX",
+  "KNA","LAC","LCA","LCN","LDC","LIC","LMC","LMY","LTE",
+  "MAC","MAF","MEA","MHL","MIC","MNA","MNP","NAC","NAM","NCL",
+  "NRU","OED","OSS","PLW","PRE","PRI","PRK","PSE","PSS","PST",
+  "PYF","SAS","SST","SSA","SSF","SXM","TCA",
+  "TEA","TEC","TLA","TMN","TSA","TSS",
+  "UMC","VGB","VIR","WSM","XKX",
+  
+  "AIA","AIR","ANT","COK","ESH","FLK","GLP","GUF","MTQ","REU",
+  "SCG","SEA","SHN","SPM","TWN","EU27","GLOBAL TOTAL"
+)
+
+
 df_clean <- TradeData %>%
   mutate(
     reporterISO = toupper(reporterISO),
@@ -170,7 +190,8 @@ rownames(trade_matrix_exports) <- NULL
 
 ## Scale
 trade_matrix_exports <- trade_matrix_exports %>%
-  mutate(across(-exporter, ~ .x / 1000000))
+  mutate(across(-exporter, ~ .x / 1000000)) %>%
+  rename(region = exporter)
 
 
 ################################################################################
@@ -180,26 +201,26 @@ GHG <- read_delim("Data/Rawdata/GHG.csv",
                   delim = ";",
                   locale = locale(decimal_mark = ".")) %>%
   rename(Code = `EDGAR Country Code`,
-         Carbon = `2023`) %>%
-  select(Code, Country, Carbon) %>%
+         `CO2` = `2023`) %>%
+  select(Code, Country, `CO2`) %>%
   mutate(
     # alles auf Zahl trimmen: Leerzeichen raus, Komma -> Punkt
-    Carbon = str_replace_all(Carbon, "\\s", ""),    
-    Carbon = str_replace_all(Carbon, ",", "."),
-    Carbon = as.numeric(Carbon)
+    `CO2` = str_replace_all(`CO2`, "\\s", ""),    
+    `CO2` = str_replace_all(`CO2`, ",", "."),
+    `CO2` = as.numeric(`CO2`)
   )
 
 #Auf 15 Regionen abbilden und aggregieren
 ghg_regions <- GHG %>%
   mutate(
     Code   = toupper(Code),
-    Carbon = as.numeric(Carbon)
+    `CO2` = as.numeric(`CO2`)
   ) %>%
   filter(!(Code %in% drop_iso)) %>%              # Aggregate wie "W00", "ALL" etc. raus
   mutate(region = iso_to_region(Code)) %>%       # ISO3 -> Region
   group_by(region) %>%
-  summarise(Carbon = sum(Carbon, na.rm = TRUE), .groups = "drop") %>%
-  complete(region = regions_order, fill = list(Carbon = 0)) %>%  # fehlende Regionen auffüllen
+  summarise(`CO2` = sum(`CO2`, na.rm = TRUE), .groups = "drop") %>%
+  complete(region = regions_order, fill = list(`CO2` = 0)) %>%  # fehlende Regionen auffüllen
   mutate(region = factor(region, levels = regions_order)) %>%
   arrange(region)
 
@@ -230,7 +251,7 @@ pop_regions <- Population %>%
   complete(region = regions_order, fill = list(Population = 0)) %>%  # fehlende Regionen auffüllen
   mutate(region = factor(region, levels = regions_order)) %>%
   arrange(region) %>%
-  mutate(Population=Population/1000000)
+  mutate(Population=Population/1000000000)
 
 ################################################################################
 # 4. GDP Data
@@ -284,15 +305,14 @@ mckinsey_alpha <- c(
 )
 
 # Merge all data sets
-Input_Updated <- trade_matrix_exports %>%
-  rename(region = exporter) %>%
+Input_Updated <- gdp_regions %>%
   left_join(pop_regions, by = "region") %>%
-  left_join(gdp_regions, by = "region") %>%
   left_join(ghg_regions, by = "region") %>%
+  left_join(trade_matrix_exports, by = "region") %>%
   mutate(McKinsey_alpha = mckinsey_alpha)%>%
-  rename(Country=region)
+  rename(Country=region) %>%
+  rename_with(~ paste0("Import_", .x), -c(Country, GDP, Population, CO2, McKinsey_alpha))
+  
 
 # Export
 write_xlsx(Input_Updated, "Data/Input_Updated.xlsx")
-
-

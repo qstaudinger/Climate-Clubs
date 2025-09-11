@@ -324,7 +324,7 @@ carbon_price_original <- ggplot(results_original, aes(x = combo, y = global_pric
   scale_fill_gradient(low = "skyblue", high = "navy", name = "Tariff") +
   labs(
     x = "Target price (SCC) and tariff rate",
-    y = "Number of participating regions",
+    y = expression("Global average carbon ($t/CO "[2]*")"),
     title = "Participation by SCC and tariff"
   ) +
   theme_minimal(base_size = 14) +
@@ -345,7 +345,7 @@ net_gain_original.png <- ggplot(results_original, aes(x = combo, y = sum_gains, 
   scale_fill_gradient(low = "skyblue", high = "navy", name = "Tariff") +
   labs(
     x = "Target price (SCC) and tariff rate",
-    y = "Number of participating regions",
+    y = "Net Income Gain (billions, 2011$/year)",
     title = "Participation by SCC and tariff"
   ) +
   theme_minimal(base_size = 14) +
@@ -366,7 +366,7 @@ results_updated <- results_updated %>%
     combo = factor(combo, levels = combo) 
   )
 
-ggplot(results_updated, aes(x = combo, y = Sum_Status, fill = tariff)) +
+number_regions_updated <- ggplot(results_updated, aes(x = combo, y = Sum_Status, fill = tariff)) +
   geom_col(position = "dodge", width = 0.8) +
   facet_wrap(~SCC, scales = "free_x", nrow = 1) +
   scale_fill_gradient(low = "skyblue", high = "navy", name = "Tariff") +
@@ -383,7 +383,7 @@ ggplot(results_updated, aes(x = combo, y = Sum_Status, fill = tariff)) +
     legend.position = "none",
     plot.title = element_text(hjust = 0.5)
   )
-ggsave("Graphs/net_gain_updated.png", plot = net_gain_updated.png, width = 8, height = 5, dpi = 300)
+ggsave("Graphs/number_regions_updated.png", plot = number_regions_updated.png, width = 8, height = 5, dpi = 300)
 
 
 # 4.2.2. Globally Averaged Global Carbon Price by Target Carbon Price and Tariff Rate
@@ -393,7 +393,7 @@ carbon_price_updated <- ggplot(results_updated, aes(x = combo, y = global_price,
   scale_fill_gradient(low = "skyblue", high = "navy", name = "Tariff") +
   labs(
     x = "Target price (SCC) and tariff rate",
-    y = "Number of participating regions",
+    y = expression("Global average carbon ($t/CO "[2]*")"),
     title = "Participation by SCC and tariff"
   ) +
   theme_minimal(base_size = 14) +
@@ -414,7 +414,7 @@ net_gain_updated.png <- ggplot(results_updated, aes(x = combo, y = sum_gains, fi
   scale_fill_gradient(low = "skyblue", high = "navy", name = "Tariff") +
   labs(
     x = "Target price (SCC) and tariff rate",
-    y = "Number of participating regions",
+    y = "Net Income Gain (billions, 2011$/year)",
     title = "Participation by SCC and tariff"
   ) +
   theme_minimal(base_size = 14) +
